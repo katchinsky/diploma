@@ -75,6 +75,7 @@ class Parser(object):
             number_options[i] = number_options[i].split('\xa0')[0]
             number_options[i] = number_options[i].split('запишите в ответ')[0]
             number_options[i] = number_options[i].split('выбери')[0]
+
         for i in range(len(letter_options)):
             letter_options[i] = letter_options[i].split('\xa0')[0]
             letter_options[i] = letter_options[i].split('запишите в ответ')[0]
@@ -124,5 +125,7 @@ class Parser(object):
                 self.tasks.append(task)
 
     def parse_folder(self):
+        print(self.foldername)
+        print(os.listdir(self.foldername))
         for filename in tqdm(os.listdir(self.foldername)):
             self.parse_file('{dirname}/{filename}'.format(dirname=self.foldername, filename=filename))

@@ -2,7 +2,7 @@ import random
 from copy import deepcopy
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 from deeppavlov import build_model, configs
 from deeppavlov.core.common.file import read_json
 from sentence_transformers import SentenceTransformer

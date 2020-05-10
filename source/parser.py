@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 from .constants import QUESTION_TYPES
 

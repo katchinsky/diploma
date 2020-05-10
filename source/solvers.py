@@ -143,9 +143,9 @@ class SimpleBertSolver(BaseSolver):
 
 
 class SimpleDPBertSolver(SimpleBertSolver):
-    def __init__(self, bert_config, model_name, emb_type='sent_mean_embs', options={}):
+    def __init__(self, config=configs.embedder.bert_embedder, emb_type='sent_mean_embs', options={}):
         self.types = QUESTION_TYPES
-        bert_config = read_json(configs.embedder.bert_embedder)
+        bert_config = read_json(config)
         bert_config['metadata']['variables']['BERT_PATH'] = DP_RU_BERT_MODEL_PATH
         self.model = build_model(bert_config)
         self.emb_type = emb_type

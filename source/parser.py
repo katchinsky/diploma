@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-import tqdm
+from tqdm import tqdm
 
 from .constants import QUESTION_TYPES
 
@@ -125,7 +125,5 @@ class Parser(object):
                 self.tasks.append(task)
 
     def parse_folder(self):
-        print(self.foldername)
-        print(os.listdir(self.foldername))
         for filename in tqdm(os.listdir(self.foldername)):
             self.parse_file('{dirname}/{filename}'.format(dirname=self.foldername, filename=filename))

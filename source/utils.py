@@ -5,6 +5,11 @@ from sklearn.manifold import TSNE
 from .constants import QUESTION_TYPES
 
 
+def get_unique_tasks(tasks):
+    tasks = set([str(task) for task in tasks])
+    return [eval(task) for task in tasks]
+
+
 def position_accuracy(true_answers, answers):
     cnt_correct = 0
     cnt_all = 0

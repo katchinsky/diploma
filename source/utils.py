@@ -64,7 +64,7 @@ def evaluate_model_on_different_tasks(answers, tasks, metrics=(position_accuracy
         return result
 
 
-def cross_validation(model_class, model_args, tasks, n_iter=5):
+def cross_validation(model_class, model_args, model_kwargs, tasks, n_iter=5):
     metrics = []
     train_size = int(len(tasks) * 0.7)
     for i in range(n_iter):
@@ -72,7 +72,7 @@ def cross_validation(model_class, model_args, tasks, n_iter=5):
         for arg in model_args:
             arg_model = arg['model'](*arg.get('args', []), **arg.get('kwargs', {}))
             new_args.append(arg_model)
-        model = model_class(*new_args)
+        model = model_class(*new_args, **model_kwargs)
         random.shuffle(tasks)
         train, test = tasks[:train_size], tasks[train_size:]
         model.train(train)

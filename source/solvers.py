@@ -129,7 +129,7 @@ class SimpleBertSolver(BaseSolver):
         question = [task['question']]
         question_embedding = self.encode(question, **self.options.get('question_kwargs', {}))[0]
         options_embedding = np.vstack(self.encode(options, **self.options.get('options_kwargs', {})))
-        similarity = np.corrcoef(question_embedding, options_embedding.T)
+        similarity = question_embedding.dot(options_embedding.T)
         answer = np.array(options)[similarity.argsort()[-3:]]
         return list(answer)
 

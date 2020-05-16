@@ -35,6 +35,7 @@ class Parser(object):
         is_letter_options = len(re.findall(r'[а-жa-z]\)', task)) > 1
         number_options = {}
         letter_options = {}
+        task_description = ''
         if not is_number_options and not is_letter_options:
             question = task
 
@@ -101,7 +102,7 @@ class Parser(object):
             self.with_table_cnt += 1
             return None
         answer = task['answer'].lower()
-        answers = [list(set(map(lambda x: x.strip(), answer[answer.find(':') + 1:].split('|'))))[0]]
+        answers = list(set(map(lambda x: x.strip(), answer[answer.find(':') + 1:].split('|'))))
         title = task['id'].lower()
         text = task['text'].lower()
         text = text[text.find(title) + len(title):]

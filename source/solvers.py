@@ -53,7 +53,7 @@ class BaseSolver(object):
                 else:
                     corrected_answer.append(options['letter_options'].index(elem) + 1)
                     corrected_answer[-1] = chr(corrected_answer[-1] + ord('а'))
-            answer = ''.join(map(str, sorted(corrected_answer)))
+            answer = ''.join(map(str, corrected_answer))
 
         if task_type == 'match_terms':
             answer = ''.join(map(str, answer))

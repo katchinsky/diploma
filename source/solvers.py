@@ -1,14 +1,18 @@
 import random
+from abc import ABC
 from copy import deepcopy
 
 import numpy as np
 from tqdm.notebook import tqdm
+
 from deeppavlov import build_model, configs
 from deeppavlov.core.common.file import read_json
+from deeppavlov.vocabs.wiki_sqlite import WikiSQLiteVocab
+
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .constants import QUESTION_TYPES, DP_RU_BERT_MODEL_PATH
+from .constants import QUESTION_TYPES, DP_RU_BERT_MODEL_PATH, RU_WIKI_PATH
 
 
 class BaseSolver(object):
@@ -116,7 +120,7 @@ class RandomSolver(BaseSolver):
         return str(random.randint(0, 1000))
 
 
-class SimpleBertSolver(BaseSolver):
+class SimpleBertSolver(BaseSolver, ABC):
     def __init__(self, model_name, options={}):
         super(SimpleBertSolver, self).__init__()
         self.model = SentenceTransformer(model_name)
@@ -143,7 +147,7 @@ class SimpleBertSolver(BaseSolver):
         return list(similarity.argmax(1) + 1)
 
 
-class SimpleDPBertSolver(SimpleBertSolver):
+class SimpleDPBertSolver(SimpleBertSolver, ABC):
     def __init__(self, config=configs.embedder.bert_embedder, emb_type='sent_mean_embs', options={}):
         self.types = QUESTION_TYPES
         bert_config = read_json(config)
@@ -158,7 +162,7 @@ class SimpleDPBertSolver(SimpleBertSolver):
         return locals()[emb_type or self.emb_type]
 
 
-class ClassificationSolver(BaseSolver):
+class ClassificationSolver(BaseSolver, ABC):
     def __init__(self, embedder, reduction_method, classifier, emb_type='sent_mean_embs'):
         super().__init__()
         self.embedder = embedder
@@ -275,3 +279,48 @@ class ClassificationSolver(BaseSolver):
 class AnotherBERTClassificationSolver(ClassificationSolver):
     def encode(self, texts):
         return self.embedder.encode(texts)
+
+
+class ContextBertSolver(SimpleBertSolver, ABC):
+    def __init__(self, model_name, options={}, download=False):
+        super(ContextBertSolver, self).__init__(model_name, options)
+        self.ranker = build_model(configs.doc_retrieval.ru_ranker_tfidf_wiki, download=download)
+        self.ruwiki = WikiSQLiteVocab(RU_WIKI_PATH)
+        self.retriever = build_model(configs.squad.squad_ru_rubert, download=download)
+
+    def get_context(self, question):
+        context = self.ruwiki(self.ranker(question))
+        context = list(map(lambda x: x.replace('\n', ' ').replace('\xa0', ' ').replace('\xad', ''), context))
+        return context
+
+    def retrieve_answer(self, context, question):
+        return self.retriever(context, question)
+
+    def match_terms_solver(self, task):
+        raise NotImplementedError
+
+    def multiple_choice_solver(self, task):
+        options = task['options']['number_options'] or task['options']['letter_options']
+        question = [task['question']]
+        context = self.get_context(question)
+        retrieved_answer = self.retrieve_answer(context, question)[0]
+        if retrieved_answer[0] == '':
+            retrieved_answer = question
+        retrieved_answer_embedding = self.encode(retrieved_answer)[0].reshape(1, -1)
+        options_embedding = np.vstack(self.encode(options))
+        similarity = cosine_similarity(retrieved_answer_embedding, options_embedding)
+        answer = np.array(options)[similarity.argsort()[-3:]]
+        return list(answer)
+
+
+class OptionsContextBertSolver(ContextBertSolver):
+
+    def multiple_choice_solver(self, task):
+        options = task['options']['number_options'] or task['options']['letter_options']
+        question = [task['question']]
+        question_context = self.get_context(question)
+        question_context_embedding = self.encode(question_context)[0].reshape(1, -1)
+        options_embedding = np.vstack(self.encode(list(map(lambda x: self.get_context([x])[0], options))))
+        similarity = cosine_similarity(question_context_embedding, options_embedding)
+        answer = np.array(options)[similarity.argsort()[-3:]]
+        return list(answer)

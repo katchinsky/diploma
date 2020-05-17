@@ -64,9 +64,9 @@ def evaluate_model_on_different_tasks(answers, tasks, metrics=(position_accuracy
         return result
 
 
-def cross_validation(model_class, model_args, model_kwargs, tasks, n_iter=5):
+def cross_validation(model_class, model_args, model_kwargs, tasks, n_iter=5, ratio=0.7):
     metrics = []
-    train_size = int(len(tasks) * 0.7)
+    train_size = int(len(tasks) * ratio)
     for i in range(n_iter):
         new_args = []
         for arg in model_args:

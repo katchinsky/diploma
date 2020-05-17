@@ -6,6 +6,7 @@ from tqdm.notebook import tqdm
 from deeppavlov import build_model, configs
 from deeppavlov.core.common.file import read_json
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from .constants import QUESTION_TYPES, DP_RU_BERT_MODEL_PATH
 
@@ -127,10 +128,10 @@ class SimpleBertSolver(BaseSolver):
     def multiple_choice_solver(self, task):
         options = task['options']['number_options'] or task['options']['letter_options']
         question = [task['question']]
-        question_embedding = self.encode(question, **self.options.get('question_kwargs', {}))[0]
+        question_embedding = self.encode(question, **self.options.get('question_kwargs', {}))[0].reshape(1, -1)
         options_embedding = np.vstack(self.encode(options, **self.options.get('options_kwargs', {})))
-        similarity = question_embedding.dot(options_embedding.T)
-        answer = np.array(options)[similarity.argsort()[-3:]]
+        similarity = cosine_similarity(question_embedding, options_embedding)
+        answer = np.array(options)[similarity[0].argsort()[-3:]]
         return list(answer)
 
     def match_terms_solver(self, task):
@@ -138,7 +139,7 @@ class SimpleBertSolver(BaseSolver):
         letter_options = task['options']['letter_options']
         number_options_embedding = np.vstack(self.encode(number_options, **self.options.get('question_kwargs', {})))
         letter_options_embedding = np.vstack(self.encode(letter_options, **self.options.get('options_kwargs', {})))
-        similarity = letter_options_embedding.dot(number_options_embedding.T)
+        similarity = cosine_similarity(letter_options_embedding, number_options_embedding)
         return list(similarity.argmax(1) + 1)
 
 

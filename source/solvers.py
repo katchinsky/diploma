@@ -302,7 +302,7 @@ class ContextBertSolver(SimpleBertSolver, ABC):
     def multiple_choice_solver(self, task):
         options = task['options']['number_options'] or task['options']['letter_options']
         question = [task['question']]
-        context = self.get_context(question)
+        context = self.get_context(question + options)
         retrieved_answer = self.retrieve_answer(context, question)[0]
         if retrieved_answer[0] == '':
             retrieved_answer = question

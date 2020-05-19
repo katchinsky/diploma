@@ -8,7 +8,7 @@ from .constants import QUESTION_TYPES
 
 
 class Parser(object):
-    def __init__(self, foldername):
+    def __init__(self, foldername, debug=True):
         self.foldername = foldername
         self.tasks = []
         self.types = QUESTION_TYPES
@@ -16,6 +16,7 @@ class Parser(object):
         self.all_tasks_cnt = 0
         self.with_image_cnt = 0
         self.with_table_cnt = 0
+        self.debug = debug
 
     def __call__(self, tasks=None):
         if not tasks:
@@ -108,6 +109,11 @@ class Parser(object):
         text = text[:text.find('пояснение')]
         text = text.replace('\xa0', ' ')
         question, options, question_type = self.parse_task(text)
+        if self.debug:
+            if len(answers[0]) in (5, 6) and set(list(answers[0])) == {'1', '2'}:
+                question_type = 2
+            elif len(answers[0]) in (5, 6) and len(set(list(answers[0]))) == len(answers[0]):
+                question_type = 4
         return {
             'question': question,
             'options': options,

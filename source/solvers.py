@@ -135,7 +135,7 @@ class SimpleBertSolver(BaseSolver, ABC):
         question_embedding = self.encode(question, **self.options.get('question_kwargs', {}))[0].reshape(1, -1)
         options_embedding = np.vstack(self.encode(options, **self.options.get('options_kwargs', {})))
         similarity = cosine_similarity(question_embedding, options_embedding)
-        answer = np.array(options)[similarity[0].argsort()[-3:]]
+        answer = np.array(options)[similarity[0].argsort()[-len(options) + 3:]]
         return list(answer)
 
     def match_terms_solver(self, task):
@@ -261,7 +261,7 @@ class ClassificationSolver(BaseSolver, ABC):
     def multiple_choice_solver(self, task):
         options = task['options']['number_options'] or task['options']['letter_options']
         pred = self.predict(task)
-        answer = np.array(options)[pred.argsort()[-3:]]
+        answer = np.array(options)[pred.argsort()[-len(options) + 3:]]
         return list(answer)
 
     def match_terms_solver(self, task):
@@ -309,7 +309,7 @@ class ContextBertSolver(SimpleBertSolver, ABC):
         retrieved_answer_embedding = self.encode(retrieved_answer)[0].reshape(1, -1)
         options_embedding = np.vstack(self.encode(options))
         similarity = cosine_similarity(retrieved_answer_embedding, options_embedding)
-        answer = np.array(options)[similarity[0].argsort()[-3:]]
+        answer = np.array(options)[similarity[0].argsort()[-len(options) + 3:]]
         return list(answer)
 
 
@@ -322,5 +322,5 @@ class OptionsContextBertSolver(ContextBertSolver):
         question_context_embedding = self.encode(question_context)[0].reshape(1, -1)
         options_embedding = np.vstack(self.encode(list(map(lambda x: self.get_context([x])[0], options))))
         similarity = cosine_similarity(question_context_embedding, options_embedding)
-        answer = np.array(options)[similarity[0].argsort()[-3:]]
+        answer = np.array(options)[similarity[0].argsort()[-len(options) + 3]]
         return list(answer)

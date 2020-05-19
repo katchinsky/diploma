@@ -113,8 +113,8 @@ class Parser(object):
         text = text.replace('\xa0', ' ')
         question, options, question_type = self.parse_task(text)
         if self.debug:
-            if len(answers[0]) in (5, 6) and set(list(answers[0])) == {'1', '2'}:
-                question_type = 2
+            if len(answers[0]) in (5, 6) and set(list(answers[0])) == {'1', '2'} and question_type != 2:
+                return None
             elif len(answers[0]) in (5, 6) and len(set(list(answers[0]))) == len(answers[0]):
                 question_type = 4
         return {

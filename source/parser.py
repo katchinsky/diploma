@@ -32,18 +32,17 @@ class Parser(object):
 
     @staticmethod
     def parse_task(task):
+        question = task
+        if 'процент' in question or 'вероятность' in question:
+            question_type = 3
+            return question, {'number_options': [], 'letter_options': []}, question_type
         is_number_options = len(re.findall(r'\d\)', task)) > 1
         is_letter_options = len(re.findall(r'[а-жa-z]\)', task)) > 1
         number_options = {}
         letter_options = {}
         if not is_number_options and not is_letter_options:
             question = task
-
-            if 'процент' in question or 'вероятность' in question:
-                question_type = 3
-                return question, {'number_options': [], 'letter_options': []}, question_type
-
-            elif re.search(r'запишите.*число', question):
+            if re.search(r'запишите.*число', question):
                 question_type = 5
             else:
                 question_type = 0

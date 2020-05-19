@@ -117,7 +117,7 @@ class Parser(object):
                 return None
             elif len(answers[0]) in (5, 6) and len(set(list(answers[0]))) == len(answers[0]):
                 question_type = 4
-            elif question_type in (1, 2) and len({'9', '8', '7', '6', '5'} & set(list(answers[0]))) > 0:
+            elif question_type in (1, 2) and len({'9', '8', '7'} & set(list(answers[0]))) > 0:
                 return None
         return {
             'question': question,

@@ -41,6 +41,8 @@ class Parser(object):
 
             if 'процент' in question or 'вероятность' in question:
                 question_type = 3
+                return question, {'number_options': [], 'letter_options': []}, question_type
+
             elif re.search(r'запишите.*число', question):
                 question_type = 5
             else:

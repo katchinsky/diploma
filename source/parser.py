@@ -71,6 +71,8 @@ class Parser(object):
                 number_options = re.split(r'\d\)', number_options)
                 letter_options.append(number_options[0])
                 number_options = number_options[1:]
+            if '.' in question:
+                question = question[:question.rfind('.')]
 
         for i in range(len(number_options)):
             number_options[i] = number_options[i].split('\xa0')[0]

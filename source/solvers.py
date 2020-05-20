@@ -273,7 +273,13 @@ class ClassificationSolver(BaseSolver, ABC):
     def predict(self, task):
         X, y = self.process_task(task)
         X = self.reduce_dim(X)
-        return self.classifier.predict(X)
+        try:
+            return self.classifier.predict_proba(X)[:,0]
+        except AttributeError:
+            try:
+                return self.classifier.decision_function(X)[:,0]
+            except AttributeError:
+                return self.classifier.predict(X)
 
 
 class AnotherBERTClassificationSolver(ClassificationSolver):

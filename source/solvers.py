@@ -362,7 +362,7 @@ class QuadraticForm(nn.Module):
 
 class QuadraticFormSolver(ClassificationSolver, ABC):
     def __init__(self, embedder, emb_dims):
-        super(QuadraticFormSolver, self).__init__(emb, Dummy, Dummy)
+        super(QuadraticFormSolver, self).__init__(embedder, Dummy, Dummy)
         self.embedder = embedder
         self.emb_dims = emb_dims
         self.model = QuadraticForm(emb_dims)

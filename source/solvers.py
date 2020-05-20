@@ -4,6 +4,8 @@ from copy import deepcopy
 
 import numpy as np
 from tqdm.notebook import tqdm
+import torch
+from torch import nn
 
 from deeppavlov import build_model, configs
 from deeppavlov.core.common.file import read_json
@@ -13,6 +15,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from .constants import QUESTION_TYPES, DP_RU_BERT_MODEL_PATH, RU_WIKI_PATH
+from .utils import Dummy
 
 
 class BaseSolver(object):
@@ -274,16 +277,16 @@ class ClassificationSolver(BaseSolver, ABC):
         X, y = self.process_task(task)
         X = self.reduce_dim(X)
         try:
-            return self.classifier.predict_proba(X)[:,0]
+            return self.classifier.predict_proba(X)[:, 0]
         except AttributeError:
             try:
-                return self.classifier.decision_function(X)[:,0]
+                return self.classifier.decision_function(X)[:, 0]
             except AttributeError:
                 return self.classifier.predict(X)
 
 
-class AnotherBERTClassificationSolver(ClassificationSolver):
-    def encode(self, texts):
+class AnotherBERTClassificationSolver(ClassificationSolver, ABC):
+    def encode(self, texts, emb_type=None):
         return self.embedder.encode(texts)
 
 
@@ -330,3 +333,75 @@ class OptionsContextBertSolver(ContextBertSolver):
         similarity = cosine_similarity(question_context_embedding, options_embedding)
         answer = np.array(options)[similarity[0].argsort()[-len(options) + 3]]
         return list(answer)
+
+
+class QuadraticForm(nn.Module):
+    def __init__(self, input_size, projection_space=None, activation=nn.Identity):
+        super(QuadraticForm, self).__init__()
+        if projection_space:
+            self.answer_projection = nn.Sequential(
+                nn.Linear(input_size, projection_space),
+                activation()
+            )
+            self.question_projection = nn.Sequential(
+                nn.Linear(input_size, projection_space),
+                activation()
+            )
+            self.need_projection = True
+        else:
+            projection_space = input_size
+            self.need_projection = False
+        self.operator = nn.Linear(projection_space, projection_space)
+
+    def forward(self, question, answer):
+        if self.need_projection:
+            question = self.question_projection(question)
+            answer = self.answer_projection(answer)
+        return torch.einsum('bs,bs->b', self.operator(question), answer)
+
+
+class QuadraticFormSolver(ClassificationSolver, ABC):
+    def __init__(self, embedder, emb_dims):
+        super(QuadraticFormSolver, self).__init__(emb, Dummy, Dummy)
+        self.embedder = embedder
+        self.emb_dims = emb_dims
+        self.model = QuadraticForm(emb_dims)
+        self.opt = torch.optim.SGD(self.model.parameters(), lr=0.001)
+
+    def train(self, tasks):
+        print('processing and encoding tasks...  ', end='')
+        X, Y = self.process_tasks(tasks)
+        print('training...  ')
+        loss_func = nn.BCEWithLogitsLoss()
+        for i in range(2):
+            for start in range(0, len(X), 64):
+                end = min(start + 64, len(X))
+                x = np.array(X[start:end])
+                y = np.array(Y[start:end])
+                self.opt.zero_grad()
+                q = torch.from_numpy(x[:, :self.emb_dims])
+                a = torch.from_numpy(x[:, self.emb_dims:])
+                pred = self.model(q, a)
+                loss = loss_func(pred, torch.from_numpy(y.astype(float)))
+                loss.backward()
+                self.opt.step()
+                print('loss:', loss.item())
+
+    def predict(self, task):
+        X, y = self.process_task(task)
+        X = np.array(X)
+        q, a = X[:, :self.emb_dims], X[:, self.emb_dims:]
+        q = torch.from_numpy(q)
+        a = torch.from_numpy(a)
+        with torch.no_grad():
+            pred = self.model(q, a)
+        return pred.numpy()
+
+
+class QuadraticFormWithProjectionsSolver(QuadraticFormSolver, ABC):
+    def __init__(self, embedder, emb_dims, projection_space):
+        super(QuadraticFormSolver, self).__init__(embedder, Dummy, Dummy)
+        self.embedder = embedder
+        self.emb_dims = emb_dims
+        self.model = QuadraticForm(emb_dims, projection_space=projection_space, activation=nn.Tanh)
+        self.opt = torch.optim.Adam(self.model.parameters(), lr=0.0001)

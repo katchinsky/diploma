@@ -99,7 +99,7 @@ class BaseSolver(object):
 class RandomSolver(BaseSolver):
     def multiple_choice_solver(self, task):
         options = task['options']['number_options'] or task['options']['letter_options']
-        return random.sample(options, min(3, len(options)))
+        return random.sample(options, len(options) - 3)
 
     def question_solver(self, task):
         raise NotImplementedError('Open-ended question cannot be answered randomly')

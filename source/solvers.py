@@ -331,7 +331,7 @@ class OptionsContextBertSolver(ContextBertSolver):
         question_context_embedding = self.encode(question_context)[0].reshape(1, -1)
         options_embedding = np.vstack(self.encode(list(map(lambda x: self.get_context([x])[0], options))))
         similarity = cosine_similarity(question_context_embedding, options_embedding)
-        answer = np.array(options)[similarity[0].argsort()[-len(options) + 3]]
+        answer = np.array(options)[similarity[0].argsort()[-len(options) + 3:]]
         return list(answer)
 
 

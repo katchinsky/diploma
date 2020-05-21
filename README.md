@@ -1,1 +1,1 @@
-# diploma
+# biology_test_solving
